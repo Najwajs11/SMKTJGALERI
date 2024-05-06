@@ -1,0 +1,171 @@
+<?php
+    session_start();
+	include 'db.php';
+	if($_SESSION['status_login'] != true){
+		echo '<script>window.location="login.php"</script>';
+    }
+	
+	$produk = mysqli_query($conn, "SELECT * FROM  tb_image WHERE image_id = '".$_GET['id']."'");
+	if(mysqli_num_rows($produk) == 0){
+	    echo '<script>window.location="data-image.php"</script>';
+	}
+	$p = mysqli_fetch_object($produk);
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WEB Galeri Foto</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script src="https://cdn.ckeditor.com/4.20.0/standard/ckeditor.js"></script>
+</head>
+
+<body>
+    <!-- header -->
+     <header>
+        <div class="container">
+        <h1> <a href="index.php"style="font-family: serif">SMK 1 TRIPLE "J"</h1>
+        <ul>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.dropbtn {
+  background-color: #2600ad;
+  color: white;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {background-color: #ddd;}
+
+.dropdown:hover .dropdown-content {display: block;}
+
+.dropdown:hover .dropbtn {background-color: #3e8e41;}
+</style>
+</head>
+<body style="background-color:white;">
+<div class="dropdown">
+  <button class="dropbtn">Manajemen Admin</button>
+  <div class="dropdown-content">
+  <a href="dashboard.php">Dashboard</a>
+  <a href="profil.php">Profil</a>
+<a href="data-image.php">Post Foto</a>
+<a href="registrasi.php">Tambah akun Admin </a>
+<a href="Keluar.php">Keluar</a>
+  </div>
+</body>
+        </ul>
+        </div>
+    </header>
+    
+    <!-- content -->
+    <div class="section">
+        <div class="container">
+            <h3>Edit Data Foto</h3>
+            <div class="box">
+    <form action="" method="POST" enctype="multipart/form-data">
+            <input type="text" name="kategori" class="input-control" placeholder="Kategori Foto" value="<?php echo $p->category_name ?>" readonly="readonly">
+            <input type="text" name="namauser" class="input-control" placeholder="Nama User" value="<?php echo $p->admin_name ?>" readonly="readonly">
+            <input type="text" name="nama" class="input-control" placeholder="Nama Foto" value="<?php echo $p->image_name ?>" required>
+                   
+                   <img src="foto/<?php echo $p->image ?>" width="100px" />
+                   <input type="hidden" name="foto" value="<?php echo $p->image ?>" />
+                   <input type="file" name="gambar" class="input-control">
+                   <textarea class="input-control" name="deskripsi" placeholder="Deskripsi"><?php echo $p->image_description ?></textarea><br />
+                   <select class="input-control" name="status">
+                       <option value="">--Pilih--</option>
+                       <option value="1" <?php echo ($p->image_status == 1)? 'selected':''; ?>>Aktif</option>
+                       <option value="0"<?php echo ($p->image_status == 0)? 'selected':''; ?>>Tidak Aktif</option> 
+                   </select>
+                   <input type="submit" name="submit" value="Submit" class="btn">
+               </form>
+               <?php
+                   if(isset($_POST['submit'])){
+					
+					// data inputan dari form
+					$kategori  = $_POST['kategori'];
+					$user      = $_POST['namauser'];
+					$nama      = $_POST['nama'];
+					$deskripsi = $_POST['deskripsi'];
+					$status    = $_POST['status'];
+					$foto      = $_POST['foto'];
+					
+					// data gambar yang baru 
+					$filename = $_FILES['gambar']['name'];
+					$tmp_name = $_FILES['gambar']['tmp_name'];
+					   
+					//jika admin ganti gambar
+					if($filename != ''){
+						
+						$type1 = explode('.', $filename);
+					    $type2 = $type1[1];
+
+                        $newname = 'foto'.time().'.'.$type2;
+					
+					    $tipe_diizinkan = array('jpg', 'jpeg', 'png', 'gif');
+					
+					  // validasi format file
+					  if(!in_array($type2, $tipe_diizinkan)){
+				        echo '<script>alert("Format file tidak diizinkan")</script>';
+						
+					  }else{
+						unlink('./foto/'.$foto); 
+					    move_uploaded_file($tmp_name, './foto/'.$newname);
+						$namagambar = $newname;  
+					  }
+					
+					}else{
+					   // jika admin tidak ganti gambar
+					   $namagambar = $foto;
+					   
+					}
+					
+					//query update data produk
+					$update = mysqli_query($conn, "UPDATE tb_image SET
+					                       category_name       = '".$kategori."',
+										   admin_name          = '".$user."',
+										   image_name          = '".$nama."',
+										   image_description   = '".$deskripsi."',
+										   image               = '".$namagambar."',
+										   image_status        = '".$status."'
+										   WHERE image_id      = '".$p->image_id."' ");
+					 if($update){
+						echo '<script>alert("Ubah data berhasil")</script>';
+					    echo '<script>window.location="data-image.php"</script>';
+					 }else{
+					    echo 'gagal'.mysqli_error($conn);
+							   
+						   }
+			      }
+			   ?>
+        </div>
+        </div>
+    </div>
+    <p
+    <script>
+            CKEDITOR.replace( 'deskripsi' );
+    </script>
+</body>
+</html>
